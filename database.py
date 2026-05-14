@@ -16,6 +16,7 @@ class ProjectDB(Base):
     description = Column(Text, nullable=True)
     status = Column(String(50), default="idea")
     tags = Column(String(500), default="")
+    github_url = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
@@ -49,10 +50,11 @@ class MilestoneDB(Base):
 def run_migrations(eng):
     """Add new columns to existing tables without dropping data."""
     new_cols = [
-        ("tasks",      "priority", "TEXT NOT NULL DEFAULT 'none'"),
-        ("tasks",      "position", "INTEGER NOT NULL DEFAULT 0"),
-        ("milestones", "priority", "TEXT NOT NULL DEFAULT 'none'"),
-        ("milestones", "position", "INTEGER NOT NULL DEFAULT 0"),
+        ("tasks",      "priority",   "TEXT NOT NULL DEFAULT 'none'"),
+        ("tasks",      "position",   "INTEGER NOT NULL DEFAULT 0"),
+        ("milestones", "priority",   "TEXT NOT NULL DEFAULT 'none'"),
+        ("milestones", "position",   "INTEGER NOT NULL DEFAULT 0"),
+        ("projects",   "github_url", "TEXT"),
     ]
     with eng.connect() as conn:
         for table, col, definition in new_cols:

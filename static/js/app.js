@@ -201,6 +201,15 @@ function openDetail(id) {
     document.getElementById('detailEditBtn').onclick = () => { closeDetail(); openModal(id); };
     document.getElementById('detailOpenBtn').href = `/project/${id}`;
 
+    const ghBtn = document.getElementById('detailGithubBtn');
+    const url = p.github_url;
+    if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
+        ghBtn.href = url;
+        ghBtn.style.display = '';
+    } else {
+        ghBtn.style.display = 'none';
+    }
+
     document.getElementById('detailPanel').classList.add('active');
     document.getElementById('detailOverlay').classList.add('active');
 }
@@ -230,6 +239,7 @@ function openModal(id) {
         nameInput.value = p.name;
         document.getElementById('projectDescription').value = p.description || '';
         document.getElementById('projectStatus').value = p.status;
+        document.getElementById('projectGithubUrl').value = p.github_url || '';
         currentTags = [...p.tags];
     } else {
         document.getElementById('modalTitle').textContent = 'New Project';
@@ -237,6 +247,7 @@ function openModal(id) {
         nameInput.value = '';
         document.getElementById('projectDescription').value = '';
         document.getElementById('projectStatus').value = 'idea';
+        document.getElementById('projectGithubUrl').value = '';
     }
 
     renderTagChips();
@@ -269,6 +280,7 @@ async function saveProject() {
         description: document.getElementById('projectDescription').value.trim() || null,
         status: document.getElementById('projectStatus').value,
         tags: [...currentTags],
+        github_url: document.getElementById('projectGithubUrl').value.trim() || null,
     };
 
     const btn = document.getElementById('saveProjectBtn');

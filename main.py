@@ -24,10 +24,11 @@ class ProjectIn(BaseModel):
     description: Optional[str] = None
     status: str = "idea"
     tags: List[str] = []
+    github_url: Optional[str] = None
 
 class ProjectOut(BaseModel):
     id: int; name: str; description: Optional[str]; status: str
-    tags: List[str]; created_at: datetime; updated_at: datetime
+    tags: List[str]; github_url: Optional[str]; created_at: datetime; updated_at: datetime
     class Config: from_attributes = True
 
 class TaskIn(BaseModel):
@@ -69,7 +70,8 @@ class ReorderBody(BaseModel):
 def db_to_out(p):
     tags = [t.strip() for t in p.tags.split(",") if t.strip()] if p.tags else []
     return ProjectOut(id=p.id, name=p.name, description=p.description,
-                      status=p.status, tags=tags, created_at=p.created_at, updated_at=p.updated_at)
+                      status=p.status, tags=tags, github_url=p.github_url,
+                      created_at=p.created_at, updated_at=p.updated_at)
 
 def task_to_out(t):
     return TaskOut(id=t.id, project_id=t.project_id, title=t.title, notes=t.notes,
@@ -108,7 +110,8 @@ def get_project(project_id: int, db: Session = Depends(database.get_db)):
 def create_project(body: ProjectIn, db: Session = Depends(database.get_db)):
     if body.status not in VALID_STATUSES: raise HTTPException(422, "Invalid status")
     p = database.ProjectDB(name=body.name.strip(), description=body.description or None,
-                            status=body.status, tags=",".join(t.strip() for t in body.tags if t.strip()))
+                            status=body.status, tags=",".join(t.strip() for t in body.tags if t.strip()),
+                            github_url=body.github_url or None)
     db.add(p); db.commit(); db.refresh(p)
     return db_to_out(p)
 
@@ -119,6 +122,7 @@ def update_project(project_id: int, body: ProjectIn, db: Session = Depends(datab
     if body.status not in VALID_STATUSES: raise HTTPException(422, "Invalid status")
     p.name = body.name.strip(); p.description = body.description or None
     p.status = body.status; p.tags = ",".join(t.strip() for t in body.tags if t.strip())
+    p.github_url = body.github_url or None
     p.updated_at = datetime.utcnow()
     db.commit(); db.refresh(p)
     return db_to_out(p)

@@ -76,6 +76,10 @@
                     <input type="text" class="tag-text-input" id="tagInput" placeholder="Add a tag...">
                 </div>
             </div>
+            <div class="form-group">
+                <label for="projectGithubUrl">GitHub Repository URL</label>
+                <input type="url" id="projectGithubUrl" placeholder="https://github.com/user/repo" autocomplete="off">
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
@@ -124,6 +128,7 @@
         <div class="detail-footer">
             <div style="display:flex;gap:8px">
                 <button class="btn btn-secondary" id="detailEditBtn">Edit</button>
+                <a class="btn btn-secondary" id="detailGithubBtn" href="#" target="_blank" rel="noopener noreferrer" style="display:none">GitHub ↗</a>
                 <a class="btn btn-primary" id="detailOpenBtn" href="#">Open Project →</a>
             </div>
         </div>

@@ -18,6 +18,7 @@
                 <span class="header-project-name" id="headerProjectName"></span>
             </div>
             <div class="hero-actions">
+                <a class="btn btn-secondary btn-sm" id="githubBtn" href="#" target="_blank" rel="noopener noreferrer" style="display:none">GitHub ↗</a>
                 <button class="btn btn-secondary btn-sm" id="editProjectBtn">Edit</button>
                 <button class="btn btn-secondary btn-sm btn-danger-ghost" id="deleteProjectBtn">Delete</button>
             </div>
@@ -110,6 +111,10 @@
                 <div class="tag-input-container" id="tagInputContainer">
                     <input type="text" class="tag-text-input" id="tagInput" placeholder="Add a tag...">
                 </div>
+            </div>
+            <div class="form-group">
+                <label for="projectGithubUrl">GitHub Repository URL</label>
+                <input type="url" id="projectGithubUrl" placeholder="https://github.com/user/repo" autocomplete="off">
             </div>
         </div>
         <div class="modal-footer">

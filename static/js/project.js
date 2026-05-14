@@ -82,6 +82,15 @@ function renderHero() {
     } else {
         tagsEl.style.display = 'none';
     }
+
+    const githubBtn = document.getElementById('githubBtn');
+    const url = project.github_url;
+    if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
+        githubBtn.href = url;
+        githubBtn.style.display = '';
+    } else {
+        githubBtn.style.display = 'none';
+    }
 }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
@@ -445,6 +454,7 @@ function openEditModal() {
     document.getElementById('projectName').value = project.name;
     document.getElementById('projectDescription').value = project.description || '';
     document.getElementById('projectStatus').value = project.status;
+    document.getElementById('projectGithubUrl').value = project.github_url || '';
     renderTagChips();
     setActive('modal', 'modalOverlay', true);
     setTimeout(() => document.getElementById('projectName').focus(), 50);
@@ -475,6 +485,7 @@ async function saveEdit() {
             description: document.getElementById('projectDescription').value.trim() || null,
             status: document.getElementById('projectStatus').value,
             tags: [...currentTags],
+            github_url: document.getElementById('projectGithubUrl').value.trim() || null,
         });
         closeEditModal();
         renderHero();
