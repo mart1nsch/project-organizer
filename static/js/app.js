@@ -106,14 +106,6 @@ function cardHTML(p) {
     <div class="card" data-id="${p.id}" data-status="${p.status}">
         <div class="card-header">
             <h2 class="card-title">${esc(p.name)}</h2>
-            <div class="card-actions">
-                <button class="icon-btn" data-action="edit" data-id="${p.id}" title="Edit">
-                    ${editIcon()}
-                </button>
-                <button class="icon-btn delete" data-action="delete" data-id="${p.id}" title="Delete">
-                    ${trashIcon()}
-                </button>
-            </div>
         </div>
         ${p.description ? `<p class="card-description">${esc(p.description)}</p>` : ''}
         <div class="card-footer">
@@ -207,7 +199,6 @@ function openDetail(id) {
     document.getElementById('detailUpdated').textContent = formatDate(p.updated_at);
 
     document.getElementById('detailEditBtn').onclick = () => { closeDetail(); openModal(id); };
-    document.getElementById('detailDeleteBtn').onclick = () => { closeDetail(); openDeleteModal(id); };
     document.getElementById('detailOpenBtn').href = `/project/${id}`;
 
     document.getElementById('detailPanel').classList.add('active');

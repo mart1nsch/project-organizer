@@ -109,7 +109,7 @@ body {
 }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-.btn-primary { background: var(--primary); color: #09131d; }
+.btn-primary { background: var(--primary); color: #09131d; text-decoration: none; }
 .btn-primary:hover:not(:disabled) {
     background: var(--primary-hover);
     box-shadow: 0 0 14px rgba(77,182,240,0.35);
