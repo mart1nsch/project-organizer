@@ -98,6 +98,38 @@
         </div>
     </div>
 
+    <!-- Detail panel -->
+    <div class="detail-overlay" id="detailOverlay"></div>
+    <aside class="detail-panel" id="detailPanel">
+        <div class="detail-header">
+            <span class="status-badge" id="detailStatus"></span>
+            <button class="modal-close" id="detailCloseBtn">&#x2715;</button>
+        </div>
+        <div class="detail-body">
+            <h1 class="detail-title" id="detailTitle"></h1>
+            <p class="detail-description" id="detailDescription"></p>
+            <div class="detail-tags" id="detailTags"></div>
+            <div class="detail-divider"></div>
+            <div class="detail-meta">
+                <div class="meta-row">
+                    <span class="meta-label">Created</span>
+                    <span class="meta-value" id="detailCreated"></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Updated</span>
+                    <span class="meta-value" id="detailUpdated"></span>
+                </div>
+            </div>
+        </div>
+        <div class="detail-footer">
+            <button class="btn btn-secondary btn-danger-ghost" id="detailDeleteBtn">Delete</button>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-secondary" id="detailEditBtn">Edit</button>
+                <a class="btn btn-primary" id="detailOpenBtn" href="#">Open Project →</a>
+            </div>
+        </div>
+    </aside>
+
     <script src="/static/js/app.js"></script>
 </body>
 </html>

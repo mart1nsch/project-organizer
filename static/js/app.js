@@ -7,6 +7,7 @@ let activeTagFilter = '';
 
 let editingId = null;
 let deletingId = null;
+let detailId = null;
 let currentTags = [];
 
 // ── API ───────────────────────────────────────────────────────────────────────
@@ -163,6 +164,11 @@ function relativeTime(isoStr) {
     return `${Math.floor(mo / 12)}y ago`;
 }
 
+function formatDate(isoStr) {
+    const date = new Date(isoStr.endsWith('Z') || isoStr.includes('+') ? isoStr : isoStr + 'Z');
+    return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
+}
+
 function clearFilters() {
     activeFilter = '';
     searchQuery = '';
@@ -171,6 +177,47 @@ function clearFilters() {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.filter-btn[data-status=""]').classList.add('active');
     render();
+}
+
+// ── Detail panel ─────────────────────────────────────────────────────────────
+function openDetail(id) {
+    const p = projects.find(p => p.id === id);
+    if (!p) return;
+    detailId = id;
+
+    const statusEl = document.getElementById('detailStatus');
+    statusEl.textContent = STATUS_LABELS[p.status] || p.status;
+    statusEl.className = `status-badge status-${p.status}`;
+
+    document.getElementById('detailTitle').textContent = p.name;
+
+    const descEl = document.getElementById('detailDescription');
+    if (p.description) {
+        descEl.textContent = p.description;
+        descEl.className = 'detail-description';
+    } else {
+        descEl.textContent = 'No description provided.';
+        descEl.className = 'detail-description no-desc';
+    }
+
+    const tagsEl = document.getElementById('detailTags');
+    tagsEl.innerHTML = p.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('');
+
+    document.getElementById('detailCreated').textContent = formatDate(p.created_at);
+    document.getElementById('detailUpdated').textContent = formatDate(p.updated_at);
+
+    document.getElementById('detailEditBtn').onclick = () => { closeDetail(); openModal(id); };
+    document.getElementById('detailDeleteBtn').onclick = () => { closeDetail(); openDeleteModal(id); };
+    document.getElementById('detailOpenBtn').href = `/project/${id}`;
+
+    document.getElementById('detailPanel').classList.add('active');
+    document.getElementById('detailOverlay').classList.add('active');
+}
+
+function closeDetail() {
+    document.getElementById('detailPanel').classList.remove('active');
+    document.getElementById('detailOverlay').classList.remove('active');
+    detailId = null;
 }
 
 // ── Modal (create / edit) ─────────────────────────────────────────────────────
@@ -353,7 +400,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const tag = tagEl.dataset.tag;
             activeTagFilter = activeTagFilter === tag ? '' : tag;
             render();
+            return;
         }
+        const card = e.target.closest('.card');
+        if (card) openDetail(parseInt(card.dataset.id, 10));
     });
 
     // Create/edit modal controls
@@ -400,10 +450,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Global Escape
+    document.getElementById('detailCloseBtn').addEventListener('click', closeDetail);
+    document.getElementById('detailOverlay').addEventListener('click', closeDetail);
+
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             closeModal();
             closeDeleteModal();
+            closeDetail();
         }
     });
 });
