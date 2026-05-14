@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Boolean, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Boolean, ForeignKey, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 
@@ -28,6 +28,8 @@ class TaskDB(Base):
     title = Column(String(500), nullable=False)
     notes = Column(Text, nullable=True)
     completed = Column(Boolean, default=False, nullable=False)
+    priority = Column(String(20), default="none", nullable=False)
+    position = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -39,7 +41,25 @@ class MilestoneDB(Base):
     title = Column(String(500), nullable=False)
     description = Column(Text, nullable=True)
     completed = Column(Boolean, default=False, nullable=False)
+    priority = Column(String(20), default="none", nullable=False)
+    position = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+def run_migrations(eng):
+    """Add new columns to existing tables without dropping data."""
+    new_cols = [
+        ("tasks",      "priority", "TEXT NOT NULL DEFAULT 'none'"),
+        ("tasks",      "position", "INTEGER NOT NULL DEFAULT 0"),
+        ("milestones", "priority", "TEXT NOT NULL DEFAULT 'none'"),
+        ("milestones", "position", "INTEGER NOT NULL DEFAULT 0"),
+    ]
+    with eng.connect() as conn:
+        for table, col, definition in new_cols:
+            existing = [r[1] for r in conn.execute(text(f"PRAGMA table_info({table})")).fetchall()]
+            if col not in existing:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {definition}"))
+        conn.commit()
 
 
 def get_db():
