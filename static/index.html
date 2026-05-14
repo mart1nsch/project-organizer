@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Organizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="app-title">My Projects</h1>
+                <span class="project-count" id="projectCount"></span>
+            </div>
+            <button class="btn btn-primary" id="newProjectBtn">+ New Project</button>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="toolbar">
+            <div class="status-filters" id="statusFilters">
+                <button class="filter-btn active" data-status="">All</button>
+                <button class="filter-btn" data-status="idea">Idea</button>
+                <button class="filter-btn" data-status="in_progress">In Progress</button>
+                <button class="filter-btn" data-status="completed">Completed</button>
+                <button class="filter-btn" data-status="paused">Paused</button>
+            </div>
+            <div class="toolbar-right">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search projects...">
+                <select class="sort-select" id="sortSelect">
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                    <option value="name">Name A–Z</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="projects-grid" id="projectsGrid"></div>
+        <div class="empty-state" id="emptyState" style="display:none"></div>
+    </main>
+
+    <!-- Create / Edit modal -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal" id="modal">
+        <div class="modal-header">
+            <h2 id="modalTitle">New Project</h2>
+            <button class="modal-close" id="modalCloseBtn">&#x2715;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="projectName">Name <span class="required">*</span></label>
+                <input type="text" id="projectName" placeholder="Project name" maxlength="200" autocomplete="off">
+                <span class="field-error" id="nameError">Name is required</span>
+            </div>
+            <div class="form-group">
+                <label for="projectDescription">Description</label>
+                <textarea id="projectDescription" placeholder="What's this project about?" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="projectStatus">Status</label>
+                <select id="projectStatus">
+                    <option value="idea">Idea</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="paused">Paused</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Tags <span class="hint">— press Enter or comma to add</span></label>
+                <div class="tag-input-container" id="tagInputContainer">
+                    <input type="text" class="tag-text-input" id="tagInput" placeholder="Add a tag...">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+            <button class="btn btn-primary" id="saveProjectBtn">Create Project</button>
+        </div>
+    </div>
+
+    <!-- Delete confirmation modal -->
+    <div class="modal-overlay" id="deleteOverlay"></div>
+    <div class="modal modal-sm" id="deleteModal">
+        <div class="modal-header">
+            <h2>Delete Project</h2>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="deleteProjectName"></strong>? This cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+            <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
