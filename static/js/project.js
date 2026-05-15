@@ -4,16 +4,12 @@ let project = null;
 let tasks = [];
 let milestones = [];
 let currentTags = [];
+let activePriorityTarget = null;
 
 const STATUS_LABELS = {
     idea: 'Idea', in_progress: 'In Progress', completed: 'Completed', paused: 'Paused',
 };
-const PRIORITY_LABELS = {
-    high: 'High Priority', medium: 'Medium Priority', low: 'Low Priority', none: 'No Priority',
-};
-const PRIORITY_GROUPS = ['high', 'medium', 'low', 'none'];
-const PRIORITY_CYCLE  = ['none', 'high', 'medium', 'low'];
-const PRIORITY_ORDER  = { high: 0, medium: 1, low: 2, none: 3 };
+const PRIORITY_SHORT = { high: 'High', medium: 'Med', low: 'Low', none: '—' };
 
 // ── API ───────────────────────────────────────────────────────────────────────
 async function api(method, path, body) {
@@ -93,31 +89,6 @@ function renderHero() {
     }
 }
 
-// ── Render helpers ────────────────────────────────────────────────────────────
-function groupedHTML(arr, itemFn) {
-    if (arr.length === 0) return '';
-
-    // Build priority buckets preserving flat-array order within each bucket
-    const buckets = {};
-    PRIORITY_GROUPS.forEach(p => buckets[p] = []);
-    arr.forEach(x => buckets[x.priority || 'none'].push(x));
-
-    const nonEmptyGroups = PRIORITY_GROUPS.filter(p => buckets[p].length > 0);
-    const showHeaders = nonEmptyGroups.some(p => p !== 'none') ||
-                        (nonEmptyGroups.length > 1);
-
-    return nonEmptyGroups.map(priority => {
-        const items = buckets[priority];
-        const header = showHeaders
-            ? `<li class="group-header-row" data-priority="${priority}">
-                   <span>${PRIORITY_LABELS[priority]}</span>
-                   <span class="group-item-count">${items.length}</span>
-               </li>`
-            : '';
-        return header + items.map(itemFn).join('');
-    }).join('');
-}
-
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 function renderTasks() {
     const done  = tasks.filter(t => t.completed).length;
@@ -131,7 +102,7 @@ function renderTasks() {
         list.innerHTML = `<li class="section-empty">No tasks yet.<br>Add one to start tracking your work.</li>`;
         return;
     }
-    list.innerHTML = groupedHTML(tasks, taskHTML);
+    list.innerHTML = tasks.map(taskHTML).join('');
 }
 
 function taskHTML(t) {
@@ -142,8 +113,9 @@ function taskHTML(t) {
         <button class="check-btn${t.completed ? ' checked' : ''}" data-action="toggle-task" data-id="${t.id}">
             ${checkSVG()}
         </button>
-        <button class="priority-dot p-${p}" data-action="cycle-task-priority" data-id="${t.id}"
-                title="Priority: ${p} — click to change"></button>
+        <button class="priority-badge p-${p}" data-action="open-priority" data-id="${t.id}" data-kind="task">
+            ${PRIORITY_SHORT[p]}
+        </button>
         <div class="item-content">
             <span class="item-title">${esc(t.title)}</span>
             ${t.notes ? `<span class="item-sub">${esc(t.notes)}</span>` : ''}
@@ -185,36 +157,8 @@ async function addTask() {
     }
 }
 
-async function cycleTaskPriority(id) {
-    const idx = tasks.findIndex(t => t.id === id);
-    if (idx === -1) return;
-    const task = { ...tasks[idx] };
-    const old  = task.priority || 'none';
-    const next = PRIORITY_CYCLE[(PRIORITY_CYCLE.indexOf(old) + 1) % PRIORITY_CYCLE.length];
-    task.priority = next;
-
-    // Optimistic update: move in local array to correct group
-    tasks.splice(idx, 1);
-    insertIntoGroup(tasks, task);
-    renderTasks();
-
-    try {
-        await api('PATCH', `/api/tasks/${id}`, { priority: next });
-        await saveTaskOrder();
-    } catch (e) {
-        alert(e.message);
-        await reloadTasks();
-    }
-}
-
 async function saveTaskOrder() {
-    const ordered = flatByPriority(tasks);
-    await api('PUT', `/api/projects/${projectId}/tasks/reorder`, { ids: ordered.map(t => t.id) });
-}
-
-async function reloadTasks() {
-    tasks = await api('GET', `/api/projects/${projectId}/tasks`);
-    renderTasks();
+    await api('PUT', `/api/projects/${projectId}/tasks/reorder`, { ids: tasks.map(t => t.id) });
 }
 
 // ── Milestones ────────────────────────────────────────────────────────────────
@@ -230,7 +174,7 @@ function renderMilestones() {
         list.innerHTML = `<li class="section-empty">No milestones yet.<br>Add one to mark key goals.</li>`;
         return;
     }
-    list.innerHTML = groupedHTML(milestones, milestoneHTML);
+    list.innerHTML = milestones.map(milestoneHTML).join('');
 }
 
 function milestoneHTML(m) {
@@ -243,8 +187,9 @@ function milestoneHTML(m) {
         <button class="milestone-btn${m.completed ? ' checked' : ''}" data-action="toggle-milestone" data-id="${m.id}">
             ${m.completed ? flagFilled : flagOutline}
         </button>
-        <button class="priority-dot p-${p}" data-action="cycle-milestone-priority" data-id="${m.id}"
-                title="Priority: ${p} — click to change"></button>
+        <button class="priority-badge p-${p}" data-action="open-priority" data-id="${m.id}" data-kind="milestone">
+            ${PRIORITY_SHORT[p]}
+        </button>
         <div class="item-content">
             <span class="item-title">${esc(m.title)}</span>
             ${m.description ? `<span class="item-sub">${esc(m.description)}</span>` : ''}
@@ -286,70 +231,90 @@ async function addMilestone() {
     }
 }
 
-async function cycleMilestonePriority(id) {
-    const idx = milestones.findIndex(m => m.id === id);
-    if (idx === -1) return;
-    const m    = { ...milestones[idx] };
-    const old  = m.priority || 'none';
-    const next = PRIORITY_CYCLE[(PRIORITY_CYCLE.indexOf(old) + 1) % PRIORITY_CYCLE.length];
-    m.priority = next;
-
-    milestones.splice(idx, 1);
-    insertIntoGroup(milestones, m);
-    renderMilestones();
-
-    try {
-        await api('PATCH', `/api/milestones/${id}`, { priority: next });
-        await saveMilestoneOrder();
-    } catch (e) {
-        alert(e.message);
-        milestones = await api('GET', `/api/projects/${projectId}/milestones`);
-        renderMilestones();
-    }
+async function saveMilestoneOrder() {
+    await api('PUT', `/api/projects/${projectId}/milestones/reorder`, { ids: milestones.map(m => m.id) });
 }
 
-async function saveMilestoneOrder() {
-    const ordered = flatByPriority(milestones);
-    await api('PUT', `/api/projects/${projectId}/milestones/reorder`, { ids: ordered.map(m => m.id) });
+// ── Priority dropdown ─────────────────────────────────────────────────────────
+function openPriorityDropdown(btn, id, kind) {
+    activePriorityTarget = { id, kind };
+    const dropdown = document.getElementById('priorityDropdown');
+    const rect = btn.getBoundingClientRect();
+    dropdown.style.display = 'block';
+    dropdown.style.top  = (rect.bottom + 4) + 'px';
+    dropdown.style.left = rect.left + 'px';
+    requestAnimationFrame(() => {
+        const dr = dropdown.getBoundingClientRect();
+        if (dr.right > window.innerWidth - 8)
+            dropdown.style.left = (window.innerWidth - 8 - dr.width) + 'px';
+    });
+}
+
+function closePriorityDropdown() {
+    document.getElementById('priorityDropdown').style.display = 'none';
+    activePriorityTarget = null;
+}
+
+async function setPriority(priority) {
+    if (!activePriorityTarget) return;
+    const { id, kind } = activePriorityTarget;
+    closePriorityDropdown();
+
+    if (kind === 'task') {
+        const idx = tasks.findIndex(t => t.id === id);
+        if (idx === -1) return;
+        tasks[idx] = { ...tasks[idx], priority };
+        renderTasks();
+        try {
+            await api('PATCH', `/api/tasks/${id}`, { priority });
+        } catch (e) {
+            alert(e.message);
+            tasks = await api('GET', `/api/projects/${projectId}/tasks`);
+            renderTasks();
+        }
+    } else {
+        const idx = milestones.findIndex(m => m.id === id);
+        if (idx === -1) return;
+        milestones[idx] = { ...milestones[idx], priority };
+        renderMilestones();
+        try {
+            await api('PATCH', `/api/milestones/${id}`, { priority });
+        } catch (e) {
+            alert(e.message);
+            milestones = await api('GET', `/api/projects/${projectId}/milestones`);
+            renderMilestones();
+        }
+    }
 }
 
 // ── Drag and drop ─────────────────────────────────────────────────────────────
 function setupDrag(listId, type) {
     const list = document.getElementById(listId);
     let dragId = null;
-    let dragOrigPriority = null;
 
     list.addEventListener('dragstart', e => {
         const row = e.target.closest('.item-row');
         if (!row) return;
         dragId = parseInt(row.dataset.id, 10);
-        dragOrigPriority = row.dataset.priority;
         e.dataTransfer.effectAllowed = 'move';
         setTimeout(() => row.classList.add('dragging'), 0);
     });
 
     list.addEventListener('dragend', () => {
-        list.querySelectorAll('.dragging, .drag-above, .drag-below, .drag-over')
-            .forEach(el => el.classList.remove('dragging', 'drag-above', 'drag-below', 'drag-over'));
+        list.querySelectorAll('.dragging, .drag-above, .drag-below')
+            .forEach(el => el.classList.remove('dragging', 'drag-above', 'drag-below'));
         dragId = null;
-        dragOrigPriority = null;
     });
 
     list.addEventListener('dragover', e => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-
-        list.querySelectorAll('.drag-above, .drag-below, .drag-over')
-            .forEach(el => el.classList.remove('drag-above', 'drag-below', 'drag-over'));
-
-        const row    = e.target.closest('.item-row');
-        const header = e.target.closest('.group-header-row');
-
+        list.querySelectorAll('.drag-above, .drag-below')
+            .forEach(el => el.classList.remove('drag-above', 'drag-below'));
+        const row = e.target.closest('.item-row');
         if (row && parseInt(row.dataset.id) !== dragId) {
             const mid = row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
             row.classList.add(e.clientY < mid ? 'drag-above' : 'drag-below');
-        } else if (header) {
-            header.classList.add('drag-over');
         }
     });
 
@@ -362,29 +327,16 @@ function setupDrag(listId, type) {
         if (srcIdx === -1) return;
         const src = { ...arr[srcIdx] };
 
-        const row    = e.target.closest('.item-row');
-        const header = e.target.closest('.group-header-row');
-
-        let newPriority = src.priority || 'none';
-
-        // Remove source from array
+        const row = e.target.closest('.item-row');
         arr.splice(srcIdx, 1);
 
         if (row) {
             const targetId = parseInt(row.dataset.id);
-            newPriority = row.dataset.priority || 'none';
-            src.priority = newPriority;
-            const tgtIdx = arr.findIndex(x => x.id === targetId);
-            const rect   = row.getBoundingClientRect();
-            const after  = e.clientY >= rect.top + rect.height / 2;
+            const tgtIdx   = arr.findIndex(x => x.id === targetId);
+            const rect     = row.getBoundingClientRect();
+            const after    = e.clientY >= rect.top + rect.height / 2;
             arr.splice(after ? tgtIdx + 1 : tgtIdx, 0, src);
-        } else if (header) {
-            newPriority = header.dataset.priority || 'none';
-            src.priority = newPriority;
-            insertIntoGroup(arr, src);
         } else {
-            // Dropped on empty space — put back at end
-            src.priority = newPriority;
             arr.push(src);
         }
 
@@ -392,45 +344,8 @@ function setupDrag(listId, type) {
         else milestones = arr;
 
         type === 'task' ? renderTasks() : renderMilestones();
-
-        const saveOrder = type === 'task' ? saveTaskOrder : saveMilestoneOrder;
-        const endpoint  = type === 'task' ? `/api/tasks/${dragId}` : `/api/milestones/${dragId}`;
-        const jobs = [saveOrder()];
-        if (newPriority !== dragOrigPriority) {
-            jobs.push(api('PATCH', endpoint, { priority: newPriority }));
-        }
-        Promise.all(jobs).catch(err => alert(err.message));
+        (type === 'task' ? saveTaskOrder : saveMilestoneOrder)().catch(err => alert(err.message));
     });
-}
-
-// ── Order helpers ─────────────────────────────────────────────────────────────
-
-/** Insert item into arr at end of its priority group, maintaining group order. */
-function insertIntoGroup(arr, item) {
-    const p = item.priority || 'none';
-    const targetOrder = PRIORITY_ORDER[p];
-
-    // Find last item with same priority
-    let insertIdx = -1;
-    for (let i = arr.length - 1; i >= 0; i--) {
-        if ((arr[i].priority || 'none') === p) { insertIdx = i + 1; break; }
-    }
-
-    if (insertIdx === -1) {
-        // No items with this priority → insert before first item of lower priority
-        insertIdx = arr.findIndex(x => PRIORITY_ORDER[x.priority || 'none'] > targetOrder);
-        if (insertIdx === -1) insertIdx = arr.length;
-    }
-
-    arr.splice(insertIdx, 0, item);
-}
-
-/** Return flat array with items grouped by priority order. */
-function flatByPriority(arr) {
-    const buckets = {};
-    PRIORITY_GROUPS.forEach(p => buckets[p] = []);
-    arr.forEach(x => buckets[x.priority || 'none'].push(x));
-    return PRIORITY_GROUPS.flatMap(p => buckets[p]);
 }
 
 // ── Add forms ─────────────────────────────────────────────────────────────────
@@ -595,10 +510,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
         const id = parseInt(btn.dataset.id, 10);
-        const action = btn.dataset.action;
-        if (action === 'toggle-task')        toggleTask(id);
-        if (action === 'delete-task')        deleteTask(id);
-        if (action === 'cycle-task-priority') cycleTaskPriority(id);
+        if (btn.dataset.action === 'toggle-task')   toggleTask(id);
+        if (btn.dataset.action === 'delete-task')   deleteTask(id);
+        if (btn.dataset.action === 'open-priority') openPriorityDropdown(btn, id, btn.dataset.kind);
     });
 
     // Milestone list delegation
@@ -606,10 +520,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
         const id = parseInt(btn.dataset.id, 10);
-        const action = btn.dataset.action;
-        if (action === 'toggle-milestone')          toggleMilestone(id);
-        if (action === 'delete-milestone')          deleteMilestone(id);
-        if (action === 'cycle-milestone-priority')  cycleMilestonePriority(id);
+        if (btn.dataset.action === 'toggle-milestone') toggleMilestone(id);
+        if (btn.dataset.action === 'delete-milestone') deleteMilestone(id);
+        if (btn.dataset.action === 'open-priority')    openPriorityDropdown(btn, id, btn.dataset.kind);
+    });
+
+    // Priority dropdown
+    document.getElementById('priorityDropdown').addEventListener('click', e => {
+        const opt = e.target.closest('.priority-option');
+        if (opt) setPriority(opt.dataset.priority);
+    });
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#priorityDropdown') && !e.target.closest('[data-action="open-priority"]'))
+            closePriorityDropdown();
     });
 
     // Edit modal
@@ -646,6 +569,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') { closeEditModal(); closeDeleteModal(); }
+        if (e.key === 'Escape') { closeEditModal(); closeDeleteModal(); closePriorityDropdown(); }
     });
 });
