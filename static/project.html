@@ -22,7 +22,6 @@
                     <img src="/static/img/github.png" alt="GitHub" width="18" height="18" class="github-icon">
                 </a>
                 <button class="btn btn-secondary btn-sm" id="editProjectBtn">Edit</button>
-                <button class="btn btn-secondary btn-sm btn-danger-ghost" id="deleteProjectBtn">Delete</button>
             </div>
         </div>
     </header>
@@ -120,8 +119,11 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
-            <button class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+            <button class="btn btn-secondary btn-sm btn-danger-ghost" id="deleteProjectBtn">Delete</button>
+            <div class="modal-footer-delete">
+                <button class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+            </div>
         </div>
     </div>
 

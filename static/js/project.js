@@ -485,7 +485,6 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     document.getElementById('editProjectBtn').addEventListener('click', openEditModal);
-    document.getElementById('deleteProjectBtn').addEventListener('click', openDeleteModal);
 
     // Task form
     document.getElementById('addTaskBtn').addEventListener('click', () => showAddForm('task'));
@@ -540,6 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
     document.getElementById('modalOverlay').addEventListener('click', closeEditModal);
     document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+    document.getElementById('deleteProjectBtn').addEventListener('click', openDeleteModal);
     document.getElementById('projectName').addEventListener('keydown', e => {
         if (e.key === 'Enter') saveEdit();
     });

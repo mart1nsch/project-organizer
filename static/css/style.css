@@ -419,10 +419,16 @@ body {
 
 .modal-footer {
     display: flex;
-    justify-content: flex-end;
     gap: 10px;
     padding: 18px 26px;
     border-top: 1px solid var(--border-soft);
+}
+
+.modal-footer-delete {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    gap: 10px;
 }
 
 /* ── Form ─────────────────────────────────────────────────────────────────── */
