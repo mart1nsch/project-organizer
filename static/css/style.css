@@ -642,6 +642,16 @@ body {
     background: var(--surface);
 }
 
+.btn-icon-only { padding: 6px 8px; }
+
+.github-icon {
+    filter: brightness(0) invert(1);
+    opacity: 0.6;
+    transition: opacity 0.15s;
+    display: block;
+}
+.btn:hover .github-icon { opacity: 1; }
+
 .btn-danger-ghost {
     background: transparent;
     color: var(--danger);
